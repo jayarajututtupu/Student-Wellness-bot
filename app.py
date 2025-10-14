@@ -13,8 +13,7 @@ if "mood" not in st.session_state:
 if "system_prompt" not in st.session_state:
     st.session_state.system_prompt = (
         "You are a compassionate mental wellness chatbot for students. "
-        "Respond with empathy, motivation, and relaxation tips. "
-        "Ask a gentle follow-up question after each response."
+        "Respond empathetically and supportively. Ask gentle follow-up questions to encourage reflection."
     )
 
 # Sidebar: Mood Tracker
@@ -30,22 +29,29 @@ st.sidebar.write(f"Selected mood: {mood}")
 st.title("🌱 Student Wellness Chatbot")
 st.markdown("Type how you're feeling. I'm here to support you with empathy and encouragement.")
 
-user_input = st.text_area("🧑 What's on your mind?", placeholder="e.g., 'I feel anxious about exams'")
+# Input box (maintain session state to avoid rerun issues)
+if "user_input" not in st.session_state:
+    st.session_state.user_input = ""
 
-# Function to generate chatbot response
+st.session_state.user_input = st.text_area(
+    "🧑 What's on your mind?", value=st.session_state.user_input, placeholder="e.g., 'I feel anxious about exams'"
+)
+
+# Function to generate mood-aware response
 def get_wellness_response(user_message, mood):
+    # Tailor prompt based on mood
     if mood in ["😢 Sad", "😠 Angry", "😕 Upset"]:
         mood_prompt = (
-            "The student is feeling {mood}. Respond with empathy, encouragement, "
+            f"The student is feeling {mood}. Respond with empathy, encouragement, "
             "and practical advice to help them feel better."
-        ).format(mood=mood)
+        )
     else:  # Normal, Calm, Cool
         mood_prompt = (
-            "The student is feeling {mood}. Respond positively, celebrate their feelings, "
+            f"The student is feeling {mood}. Respond positively, celebrate their feelings, "
             "and ask a reflective question to encourage mindfulness or gratitude."
-        ).format(mood=mood)
+        )
 
-    full_prompt = f"<|system|>\nYou are a compassionate student wellness chatbot. {mood_prompt}\n<|user|>\n{user_message}\n<|assistant|>"
+    full_prompt = f"<|system|>\n{st.session_state.system_prompt}\n{mood_prompt}\n<|user|>\n{user_message}\n<|assistant|>"
 
     try:
         response = client.text_generation(
@@ -57,17 +63,26 @@ def get_wellness_response(user_message, mood):
     except Exception as e:
         response = f"⚠️ Sorry, I couldn't reach the model right now. ({e})"
 
+    # Clean response: remove repeated user input and tags
     clean_reply = response.replace(user_message, "").replace("<|system|>", "").replace("<|user|>", "").replace("<|assistant|>", "").strip()
-    return clean_reply
 
+    # Remove duplicate lines
+    lines = clean_reply.splitlines()
+    deduped = []
+    for line in lines:
+        if line.strip() and line not in deduped:
+            deduped.append(line.strip())
+    return "\n".join(deduped)
 
-# Handle Send button
+# Send button logic
 if st.button("Send", key="chat_send"):
-    if user_input.strip():  # avoid empty messages
+    current_input = st.session_state.user_input.strip()
+    if current_input:
         with st.spinner("Thinking with empathy..."):
-            bot_response = get_wellness_response(user_input, st.session_state.mood)
-            st.session_state.chat_history.append(("You", user_input.strip()))
+            bot_response = get_wellness_response(current_input, st.session_state.mood)
+            st.session_state.chat_history.append(("You", current_input))
             st.session_state.chat_history.append(("Bot", bot_response))
+        st.session_state.user_input = ""  # Clear input box after sending
 
 # Display chat history
 for sender, message in st.session_state.chat_history:
