@@ -34,7 +34,18 @@ user_input = st.text_area("🧑 What's on your mind?", placeholder="e.g., 'I fee
 
 # Function to generate chatbot response
 def get_wellness_response(user_message, mood):
-    full_prompt = f"<|system|>\n{st.session_state.system_prompt}\n<|user|>\n{user_message}\n<|assistant|>"
+    if mood in ["😢 Sad", "😠 Angry", "😕 Upset"]:
+        mood_prompt = (
+            "The student is feeling {mood}. Respond with empathy, encouragement, "
+            "and practical advice to help them feel better."
+        ).format(mood=mood)
+    else:  # Normal, Calm, Cool
+        mood_prompt = (
+            "The student is feeling {mood}. Respond positively, celebrate their feelings, "
+            "and ask a reflective question to encourage mindfulness or gratitude."
+        ).format(mood=mood)
+
+    full_prompt = f"<|system|>\nYou are a compassionate student wellness chatbot. {mood_prompt}\n<|user|>\n{user_message}\n<|assistant|>"
 
     try:
         response = client.text_generation(
@@ -46,9 +57,9 @@ def get_wellness_response(user_message, mood):
     except Exception as e:
         response = f"⚠️ Sorry, I couldn't reach the model right now. ({e})"
 
-    # Clean response: remove system/user/assistant tags and repeated user input
     clean_reply = response.replace(user_message, "").replace("<|system|>", "").replace("<|user|>", "").replace("<|assistant|>", "").strip()
     return clean_reply
+
 
 # Handle Send button
 if st.button("Send", key="chat_send"):
@@ -61,3 +72,4 @@ if st.button("Send", key="chat_send"):
 # Display chat history
 for sender, message in st.session_state.chat_history:
     st.markdown(f"**{sender}:** {message}")
+
