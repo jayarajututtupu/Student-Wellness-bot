@@ -29,26 +29,32 @@ user_input = st.text_area("🧑 What's on your mind?", placeholder="e.g., 'I fee
 
 # LLaMA response function
 def get_wellness_response(user_message, mood):
-    system_prompt = (
-        f"You are a compassionate mental wellness chatbot for students. "
-        f"The student is currently feeling {mood}. "
-        "Respond with empathy, motivation, and relaxation tips. "
-        "After your response, ask a gentle follow-up question to encourage reflection."
-    )
-    full_prompt = f"<|system|>\n{system_prompt}\n<|user|>\n{user_message}\n<|assistant|>"
-    
-    response = client.text_generation(full_prompt, max_new_tokens=300, temperature=0.7)
-    reply = response.strip()
+    if mood in ["😢 Sad", "😠 Angry", "😕 Upset"]:
+        mood_prompt = (
+            "The student is feeling {mood}. Respond with empathy, encouragement, "
+            "and practical advice to help them feel better."
+        ).format(mood=mood)
+    else:  # Normal, Calm, Cool
+        mood_prompt = (
+            "The student is feeling {mood}. Respond positively, celebrate their feelings, "
+            "and ask a reflective question to encourage mindfulness or gratitude."
+        ).format(mood=mood)
 
-    # Remove system and user tags if present
-    clean_reply = (
-        reply.replace("<|system|>", "")
-             .replace("<|user|>", "")
-             .replace("<|assistant|>", "")
-             .strip()
-    )
+    full_prompt = f"<|system|>\nYou are a compassionate student wellness chatbot. {mood_prompt}\n<|user|>\n{user_message}\n<|assistant|>"
 
+    try:
+        response = client.text_generation(
+            prompt=full_prompt,
+            max_new_tokens=300,
+            temperature=0.7,
+            return_full_text=False
+        ).strip()
+    except Exception as e:
+        response = f"⚠️ Sorry, I couldn't reach the model right now. ({e})"
+
+    clean_reply = response.replace(user_message, "").replace("<|system|>", "").replace("<|user|>", "").replace("<|assistant|>", "").strip()
     return clean_reply
+
 
 # Send button
 if st.button("Send", key="chat_send"):
@@ -61,5 +67,6 @@ if st.button("Send", key="chat_send"):
 # Display chat history
 for sender, message in st.session_state.chat_history:
     st.markdown(f"**{sender}:** {message}")
+
 
 
