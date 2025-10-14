@@ -13,7 +13,7 @@ if "mood" not in st.session_state:
     st.session_state.mood = "🙂 Normal"
 
 # Sidebar: Emoji Mood Tracker
-st.sidebar.header("🧠 Mood Tracker")
+st.sidebar.header("🧠 What's your mood now?")
 mood = st.sidebar.radio(
     "How are you feeling today?",
     ["🙂 Normal", "😢 Sad", "😠 Angry", "😌 Calm", "😕 Upset", "😎 Cool"]
@@ -22,7 +22,7 @@ st.session_state.mood = mood
 st.sidebar.write(f"Selected mood: {mood}")
 
 # Chatbot UI
-st.title("🌱 Student Wellness Chatbot")
+st.title("😊 Student Wellness Chatbot")
 st.markdown("Type how you're feeling. I'm here to support you with empathy and encouragement.")
 
 user_input = st.text_area("🧑 What's on your mind?", placeholder="e.g., 'I feel anxious about exams'")
@@ -61,4 +61,5 @@ if st.button("Send", key="chat_send"):
 # Display chat history
 for sender, message in st.session_state.chat_history:
     st.markdown(f"**{sender}:** {message}")
+
 
