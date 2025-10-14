@@ -40,37 +40,31 @@ st.session_state.user_input = st.text_area(
 # Function to generate mood-aware response
 def get_wellness_response(user_message, mood):
     # Tailor prompt based on mood
-    if mood in ["😢 Sad", "😠 Angry", "😕 Upset"]:
-        mood_prompt = (
-            f"The student is feeling {mood}. Respond with empathy, encouragement, "
-            "and practical advice to help them feel better."
-        )
-    else:  # Normal, Calm, Cool
-        mood_prompt = (
-            f"The student is feeling {mood}. Respond positively, celebrate their feelings, "
-            "and ask a reflective question to encourage mindfulness or gratitude."
-        )
+    if mood in ["😢 Sad", "😠 Angry", "😕 Upset", "😥 Worried"]:
+        mood_prompt = f"The student is feeling {mood}. Respond empathetically and supportively. Ask a gentle follow-up question."
+    else:  # Normal, Calm, Cool, Surprised
+        mood_prompt = f"The student is feeling {mood}. Respond positively and ask a reflective question or prompt gratitude."
 
-    full_prompt = f"<|system|>\n{st.session_state.system_prompt}\n{mood_prompt}\n<|user|>\n{user_message}\n<|assistant|>"
+    full_prompt = f"<|system|>\nYou are a compassionate student wellness chatbot. {mood_prompt}\n<|user|>\n{user_message}\n<|assistant|>"
 
     try:
         response = client.text_generation(
             prompt=full_prompt,
-            max_new_tokens=300,
+            max_new_tokens=250,
             temperature=0.7,
             return_full_text=False
         ).strip()
     except Exception as e:
-        response = f"⚠️ Sorry, I couldn't reach the model right now. ({e})"
+        return f"⚠️ Sorry, I couldn't reach the model right now. ({e})"
 
-    # Clean response: remove repeated user input and tags
-    clean_reply = response.replace(user_message, "").replace("<|system|>", "").replace("<|user|>", "").replace("<|assistant|>", "").strip()
+    # Remove system/user/assistant tags
+    clean_reply = response.replace("<|system|>", "").replace("<|user|>", "").replace("<|assistant|>", "").strip()
 
-    # Remove duplicate lines
+    # Remove any repeated lines that echo system instructions
     lines = clean_reply.splitlines()
     deduped = []
     for line in lines:
-        if line.strip() and line not in deduped:
+        if line.strip() and "The student is feeling" not in line and line not in deduped:
             deduped.append(line.strip())
     return "\n".join(deduped)
 
@@ -87,4 +81,5 @@ if st.button("Send", key="chat_send"):
 # Display chat history
 for sender, message in st.session_state.chat_history:
     st.markdown(f"**{sender}:** {message}")
+
 
